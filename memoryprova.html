@@ -1,0 +1,466 @@
+<!DOCTYPEhtml>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel = "stylesheet" href = "CSS1.css" type="text/css">
+	</head>
+	<body>
+		<h1> MEMORY </h1>
+			<div class="riga" id="input">
+			<div class= "col-3"></div>
+			<div class="no col-6" id="div">
+				<b id="bold"></b>
+				<p id="par"></p>
+				<button type="button" onclick="Rinizio()" id="btn" class="no"> Nuova partita </button>
+			</div>
+
+			<div id="camp" class="col-6">
+				<p id="abc"> Inserire il numero di giocatori, compreso fra 1 e 4 </p>
+				<input type="number" id="giocatori" placeholder="Giocatori" min="1" max="4">
+				<input type="text" id="nomi" placeholder ="Nome" class="no">
+				<h3 class="no" id="a"> Inserimento non valido! </h3>
+				<h3 class="no" id="b"> Compilare questo campo (per favore...)! </h3>
+				<button type= "button" onclick="Conferma()" id="btn1"> Conferma </button>
+				<button type= "button" onclick="Nomi()" id="btn2" class="no"> Invia </button>
+			</div>
+			<div class="riga">
+
+		<script>
+			var flag = false; //servirà più volte questo boolean!
+			var punti = [];
+			var names=0;
+			var nomi = [];
+			var turno = 0;
+			var i, j;
+			var x=6;	//lunghezza del tabellone
+			var y=4;	//altezza del tabellone
+			var N=(x*y)/2;	//mi serve a determinare il numero massimo generabile casualmente
+			var togli = [];
+			var carte = [];
+			var incorso = false;
+			var players = null;
+			var nen=1;
+			var check = false;
+			var giàgirata = false;	//indica se c'è una carta già girata sul tabellone
+			var girata;
+			var prima, seconda;	//prende il source delle due immagini per fare il confronto 
+			var carta1, carta2;	//prende i due td (carte) che vengono girati
+			var tent=0;	//tentativi
+			var coppie=0;	//conta il numero delle coppie trovate
+			var immagine1, immagine2;	//prende le immagini delle due carte per nasconderle in caso di corrispondenza	
+			
+			function Rinizio(){
+					document.getElementById("div").classList.add("no");		//sistemo le cose che necessitano di essere azzerate per una nuova partita
+					turno = 0;
+					tent = 0;
+					coppie = 0;
+					Creadiv();
+			}
+			
+			function Creadiv(){
+				var DIV1 = document.createElement("div");
+				DIV1.classList.add("riga");
+				DIV1.id= "contienepunti";
+				if(players>1){		//in caso sia un singolo giocatore, la partita si svolgerà senza punti, ma col conteggio dei tentativi
+					for(i=0; i<players; i++){
+						punti[i]=0;
+						var div = document.createElement("div");	
+						switch(players){	//questo switch permette di "centrare" in maniera semplice i div in base al loro numero!
+							case 2:
+							div.classList.add("col-6");
+							break;
+							case 3:
+							div.classList.add("col-4");
+							break;
+							case 4:
+							div.classList.add("col-3");
+							break;
+						}
+					div.classList.add("divpunti");
+					div.id = i;
+					DIV1.appendChild(div);
+					div.innerHTML = "<b>" + nomi[i] + "</b>" + "<br>" + "<p>" + punti[i] + "</p>";	//nel div verranno scritti il nome del giocatore e il punteggio attuale (0)			
+					}
+					DIV1.classList.add("mostra");
+					document.body.appendChild(DIV1);	
+					document.getElementById(turno).style.backgroundColor="#e2e58f";
+				}
+				Inizio(0);
+			}
+								
+			function Nomi(){ //commenta e controlla il codice graficamente!
+				
+				nomi[nen-1] = document.getElementById("nomi").value;	//estrapolo dall'input il nome del giocatore
+				document.getElementById("nomi").value = null;	//per pura bellezza, rimuovo il nome dall'input
+
+				if(nen==players){	//se i nomi inseriti sono uguali al numero di giocatori...
+					Creadiv();		//...chiamo la funzione...
+					document.getElementById("camp").classList.add("no");	//...e nascondo il div
+					document.getElementById("input").classList.add("no");
+				}
+				else{	//sennò...
+					nen++;	//...nen aumenta di 1...
+					document.getElementById("abc").innerHTML = "Giocatore n°" + nen + ", inserisci il tuo nome."; //...e chiedo altri nomi
+				}
+			}
+				
+			function Conferma(){
+				players = document.getElementById("giocatori").value;		//estrapolo dall'input il numero di giocatori
+				
+				if(players<1 || players>4){		//se per qualche motivo è stato scelto un numero maggiore/minore di quanto proposto (o anche un formato invalido!)...
+					document.getElementById("a").classList.remove("no");
+					document.getElementById("giocatori").style.borderColor= " #da2316";		//...avviso l'utente e gli impedisco di continuare
+				}
+				else{ //se è tutto ok...
+					players = parseInt(players);
+					
+					if(players>1){
+						document.getElementById("a").classList.add("no");	//...inizio cambiando il contenuto del div...
+						document.getElementById("b").classList.add("no");
+						document.getElementById("giocatori").classList.add("no");
+						document.getElementById("nomi").classList.remove("no");
+						document.getElementById("btn1").classList.add("no");
+						document.getElementById("btn2").classList.remove("no");		//...e permetto di iniziare a inserire i nomi
+						document.getElementById("abc").innerHTML = "Giocatore n°" + nen + ", inserisci il tuo nome.";
+					}	
+					else{
+						document.getElementById("camp").classList.add("no");
+						Creadiv();
+					}
+				}		
+			}			
+			
+			function Inizio(z){
+			if(z==1){
+				tent=0;	//tentativi
+				coppie=0;	//conta il numero delle coppie trovate
+				document.getElementById("btn").classList.add("no");
+				document.getElementById("div").classList.add("no");
+				}
+			var conts = [0,0,0,0,0,0,0,0,0,0,0,0];
+			var x=6;	//lunghezza del tabellone
+			var y=4;	//altezza del tabellone
+			var N=(x*y)/2;	//mi serve a determinare il numero massimo generabile casualmente
+			
+			var Tabella = document.createElement("table");	//creo una tabella
+			Tabella.id = "Tab";	//la tabella guadagna l'id
+			Tabella.classList.add("col-6");
+			
+			for(i=0; i<y; i++){
+				var riga = document.createElement("tr");	//creo una riga alla volta (4 in tutto)
+				
+				for(j=0; j<x; j++){
+					var cella = document.createElement("td");
+					cella.className = "carta";					
+					
+					do{
+						var image = new Image(); //controlla
+						image.className = "pesce";
+						var rand= Math.floor(Math.random() * N) + 1;	//genero casualmente la variabile che deciderà con cosa riempire la cella
+						
+						switch (rand){	//in base alla variabile rand, verrà decisa l'immagine
+							case 1:		//i commenti di seguito si applicano per tutti i casi dello switch
+							if(conts[0]<2){	//signifca che l'immagine è stata generata meno di 2 volte
+									//utilizzo la funzione new Image per generare un'immagine
+								image.src = "immagini/anguilla.jpg";	//assegno il src che mi serve all'immagine							
+									//con appendChild, aggiungo l'immagine nel td
+								conts[0]++;	//aumento il numero di volte in cui l'immagine è stata generata
+								flag=false;		//questo serve ad evitare eventuali cicli infiniti: infatti, se non resetassi flag, il ciclo sarebbe infinito								
+							}
+							else{	//l'immagine è già stata generata due volte
+								flag=true;	//in questo modo, posso ripetere il ciclo e fare generare un'immagine diversa
+							}
+							break;
+							case 2: 
+							if(conts[1]<2){						
+								image.src = "immagini/merluzzo.jpg";							
+								conts[1]++;
+								flag=false;								
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 3:
+							if(conts[2]<2){								
+								image.src = "immagini/helo.jpg";							
+								conts[2]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 4:
+							if(conts[3]<2){							
+								image.src = "immagini/pescegatto.jpg";
+								conts[3]++;
+								flag=false;	
+							}
+								else{
+								flag=true;
+							}
+							break;
+							case 5:
+							if(conts[4]<2){
+
+								image.src = "immagini/pesceluna.jpg";
+								conts[4]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 6:
+							if(conts[5]<2){
+								image.src = "immagini/pescepagliaccio.jpg";
+								conts[5]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 7:
+							if(conts[6]<2){
+								image.src = "immagini/pescepalla.jpg";
+								conts[6]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 8:
+							if(conts[7]<2){
+								image.src = "immagini/pescerosso.jpg";
+								conts[7]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 9:
+							if(conts[8]<2){
+								image.src = "immagini/pescescorpione.jpg";
+								conts[8]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 10:
+							if(conts[9]<2){
+								image.src = "immagini/pescesiluro.jpg";
+								conts[9]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 11:
+							if(conts[10]<2){
+								image.src = "immagini/pescespada.jpg";
+								conts[10]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+							case 12:
+							if(conts[11]<2){
+								image.src = "immagini/tonno.jpg";
+								conts[11]++;
+								flag=false;	
+							}
+							else{
+								flag=true;
+							}
+							break;
+						}	
+					}
+					
+					while(flag);
+					cella.appendChild(image);
+					var image = new Image();
+					image.src = "immagini/carta.jpg";
+					image.className = "retro";
+					cella.appendChild(image);
+					riga.appendChild(cella);
+					
+				}
+				Tabella.appendChild(riga);
+			}
+			
+			var spazio = document.createElement("div");
+			spazio.classList.add("col-3");
+			var divtab = document.createElement("div");
+			divtab.id = "davide";
+			divtab.appendChild(spazio);
+			divtab.appendChild(Tabella);
+			divtab.classList.add("riga");
+			document.body.appendChild(divtab);
+			Prepara();
+		}
+			function Prepara(){
+				togli = [];
+				carte = document.querySelectorAll('.carta');	//creo un array con tutti i td che sono carte
+				carte.forEach(flip => flip.addEventListener('click', Gira));
+			}
+			
+			function Gira() {
+			
+				if(girata!=this){
+					this.classList.add('flip');	//aggiungendo la classe flip, la carta gira
+					girata = this;
+					
+					if (!giàgirata){
+						carta1 = this;	//carta1 assume come valore il td
+						immagine1 = this.querySelector(".pesce");	//immagine1 assume come valore l'immagine della carta
+						giàgirata = true;	//una carta è già girata sul tabellone
+						prima = this.querySelector(".pesce").src;	//prima assume come valore il source dell'immagine
+					}
+					else{
+						carta2 = this;	//carta2 assume come valore il td
+						immagine2 = this.querySelector(".pesce");	//immagine2 assume come valore l'immagine della carta
+						giàgirata = false;	//nessuna carta è già girata sul tabellone (più correttamente: non sarà girata)
+						seconda = this.querySelector(".pesce").src;	//secondo assume come valore il source dell'immagine
+						carte.forEach(flip => flip.removeEventListener('click', Gira));	//impedisco all'utente di selezionare altre carte nel mentre
+						
+						if(prima == seconda){	//confronto i due source: agisco in base se sono uguali o no
+							coppie++;	//segnalo che è stata trovata una coppia
+							setTimeout(Giusto, 1000);	//dopo 1 secondo per vedere le carte, attivo la funzione
+						}
+						else{
+							setTimeout(Sbaglio, 1000);	//dopo 1 secondo per vedere le carte, attivo la funzione
+						}
+						tent++;	//aumento i numeri dei tentativi impiegati
+						}
+					}					
+				}	
+				
+			function Tabellone(){	//controllo se il tabellone è stato risolto
+				if(players>1){
+					var stampa;
+					var all = false;
+					var grandi = [];
+					flag=false;
+					var cont = 0;
+					switch(players){ //se prendo anche una sola cella in più di punti, il ragionamento successivo non avrà senso
+					case 2:
+					var biggestNum = Math.max(punti[0], punti[1]);	//math.max trova il massimo fra i valori proposti
+					break;
+					case 3:
+					var biggestNum = Math.max(punti[0], punti[1], punti[2]);
+					break;
+					case 4:
+					var biggestNum = Math.max(punti[0], punti[1], punti[2]);
+					break;
+					}
+					var maxIndex = punti.findIndex(n => n === biggestNum);	//trova l'indice della cella con il numero maggiore, ma...
+					
+					for(i=0; i<players; i++){
+					
+						if(biggestNum==punti[i]){	// se più di due celle hanno biggestNum, si ha una situazione di pareggio!
+							cont++
+						}
+						
+						if(cont>1){
+							flag=true;
+						}
+					}
+					
+					if(flag){
+					
+						all = punti.every(n => n === punti[0]);	//se ogni cella è uguale alla prima, allora tutte le celle sono uguali: il pareggio è assoluto!
+						
+						if(all){
+							document.getElementById("par").innerHTML = "La partita si è conclusa in pareggio totale (WOW)!";
+						}
+						else{	//non tutte le celle sono uguali: bisogna trovare quelle uguali
+							
+							for(i=0; i<players; i++){
+								if(biggestNum==punti[i]){
+									grandi[i]=i;
+								}
+						
+							}
+							
+								document.getElementById("par").innerHTML = "La partita si è conclusa in pareggio per ";
+								for(i=0; i<grandi.lenght; i++){
+									j=grandi[i];
+									stampa=nomi[j];
+									document.getElementById("par").innerHTML += stampa + "ae";
+								}
+								document.getElementById("par").innerHTML += " con "+ biggestNum + " punti.";
+							}
+						}
+						
+					else{
+					document.getElementById("par").innerHTML += nomi[maxIndex]+ " ha vinto con "+ punti[maxIndex] + " punti!";
+					}
+				}
+				else{
+					document.getElementById("par").innerHTML = "Tabellone risolto dopo " + tent + " tentativi.";
+				}
+		
+					document.getElementById("Tab").remove();	//rimuovo il tabellone
+					var divs= document.querySelectorAll(".mostra");
+					divs.forEach(via=>via.remove());
+					document.querySelector(".riga").classList.remove("no");
+					document.getElementById("bold").innerHTML =  "PARTITA CONCLUSA!";
+					document.getElementById("btn").classList.remove("no");
+					document.getElementById("div").classList.remove("no");
+				}
+					
+			
+			function Giusto(){	
+				immagine1.style.display = "none";	//rimuovo le carte dal tabellone
+				immagine2.style.display = "none";	//rimuovo le carte dal tabellone
+				togli[i] = carta1;	//inserendo le carte nell'array "togli", impedisco alle carte già rimosse di essere selezionate
+				i++;
+				togli[i] = carta2;
+				i++;
+				carte.forEach(flip => flip.addEventListener('click', Gira));	//le carte ancora sul tabellone possono essere rigirate
+				togli.forEach(via => via.removeEventListener('click', Gira));	//le carte rimosse dal tabellone non possono essere rigirate
+				punti[turno]++;
+				if(players>1){
+				document.getElementById(turno).querySelector("p").innerHTML = punti[turno];
+				}
+				if(coppie==4){
+				setTimeout(Tabellone, 1000);
+				}
+
+	
+
+
+			}			
+			function Sbaglio(){
+			
+				carta1.classList.remove('flip');	//copro le carte
+				carta2.classList.remove('flip');
+				girata = null;	//se girata continuasse a rimanere "this", la seconda carta selezionata non potrebbe essere selezionata finche non se ne sceglie un'altra
+				carte.forEach(flip => flip.addEventListener('click', Gira));	//le carte ancora sul tabellone possono essere rigirate
+				togli.forEach(via => via.removeEventListener('click', Gira));	//le carte rimosse dal tabellone non possono essere rigirate
+				
+				if(players>1){	//se players è meno di 1, non esistono div!
+					document.getElementById(turno).style.backgroundColor="#dddddd";		
+					if(turno<players-1){
+						turno++;
+						document.getElementById(turno).style.backgroundColor="#e2e58f";		//segnalo il turno evidenziando con un colore il giocatore attuale
+					}
+					else{
+						turno=0;
+						document.getElementById(turno).style.backgroundColor="#e2e58f";
+					}
+				}
+				
+			}
+		</script>
+	</body>
+</html>
